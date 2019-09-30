@@ -1,4 +1,3 @@
-
 -- initialize alert frame and all subframes
 local function initAlert()
 
@@ -9,12 +8,14 @@ local function initAlert()
 	--init DummyFrame (used to move frame later)
 	DummyFrame = CreateFrame("Frame", nil, UIParent)
 	
-	-- set initial position on first log on
+	-- set initial position on first log on to center of the screen
 	if POSX == nil or POSY == nil then
-		AlertFrame:SetPoint("CENTER",100, 0)
-		_, _, _, POSX, POSY = AlertFrame:GetPoint()		
+		POSX = math.floor(GetScreenWidth()/2.0)
+		POSY = math.floor(GetScreenHeight()/2.0)
+		AlertFrame:SetPoint("CENTER", UIParent, "BOTTOMLEFT", POSX, POSY)
+		
 	else -- if not first log in, load saved position from SavedVariables: POSX and POSY
-		AlertFrame:SetPoint("CENTER",POSX, POSY)
+		AlertFrame:SetPoint("CENTER", UIParent, "BOTTOMLEFT", POSX, POSY)
 	end
 	
 	-- the base alert frame is just a black square which will work as a background (makes the cooldown timer effect look better too)
@@ -61,7 +62,7 @@ local function unlock()
 	-- create dummy frame to position alert frame (initialized in init func)	
 	DummyFrame:Show()
 	DummyFrame:SetSize(50, 50)
-	DummyFrame:SetPoint("CENTER",POSX, POSY)
+	DummyFrame:SetPoint("CENTER", UIParent, "BOTTOMLEFT", POSX, POSY)
 	DummyFrame.texture = DummyFrame:CreateTexture()
 	DummyFrame.texture:SetAllPoints()
 	DummyFrame.texture:SetTexture("Interface\\Icons\\ability_meleedamage")
@@ -74,8 +75,7 @@ local function unlock()
 	DummyFrame:SetScript("OnDragStart", DummyFrame.StartMoving)	
 	function setFramePos()
 		DummyFrame:StopMovingOrSizing()
-		_, _, _, POSX, POSY = DummyFrame:GetPoint() -- saves points POSX and POSY to saved variables
-		
+		POSX, POSY = DummyFrame:GetCenter() -- saves points POSX and POSY to saved variables
 	end
 	DummyFrame:SetScript("OnDragStop",setFramePos)
 
@@ -93,6 +93,7 @@ end
 
 local function lock()
 	--AlertFrame:SetMovable(false)
+	POSX, POSY = DummyFrame:GetCenter()
 	DummyFrame:EnableMouse(false)
 	DummyFrame:Hide()
 end
@@ -102,7 +103,12 @@ local function triggerAlert()
 	
 
 	lock()
-	AlertFrame:SetPoint("CENTER",POSX, POSY)
+
+	if POSX == nil or POSY == nil then -- If something went wrong with the variables, reset POSX and POSY to the middle of the screen.
+		POSX = math.floor(GetScreenWidth()/2.0)
+		POSY = math.floor(GetScreenHeight()/2.0)
+	end
+	AlertFrame:SetPoint("CENTER", UIParent, "BOTTOMLEFT", POSX, POSY)
 
 	-- show the frame
 	AlertFrame:Show()
@@ -195,8 +201,10 @@ SlashCmdList["MOA_TEST"] = function(msg)
 		lock()
 	elseif(msg=="reset") then
 		print("Reseting position.")
-		POSX = 100
-		POSY = 0
+		local screenWidth = GetScreenWidth()
+		local screenHeight = GetScreenHeight()
+		AlertFrame:SetPoint("CENTER", UIParent, "BOTTOMLEFT", math.floor(screenWidth/2.0), math.floor(screenHeight/2.0))
+		POSX, POSY = AlertFrame:GetCenter()
 	else 
 		print("-- Maekor's Overpower Alert --")
 		print("Commands:")
